@@ -8,21 +8,26 @@ import { JWT_SECRATE } from "../secrets";
 export const signup = async (req: Request, res: Response) => {
     const { email, password, name } = req.body;
 
-    let user = await prismaClient.user.findFirst({ where: { email } });
+    try {
+        let user = await prismaClient.user.findFirst({ where: { email } });
 
-    if(user) {
-        throw Error("User already exist!");
-    }
-
-    user = await prismaClient.user.create({
-        data : {
-            name,
-            email,
-            password: hashSync(password, 10)
+        if (user) {
+            return res.status(409).json({ message: "User already exists!" }); // 409 Conflict
         }
-    })
 
-    res.status(200).send(user);
+        user = await prismaClient.user.create({
+            data: {
+                name,
+                email,
+                password: hashSync(password, 10)
+            }
+        })
+
+        res.status(200).send(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error." });
+    }
 
 }
 
